@@ -6,6 +6,8 @@ import CustomerHeader from '@/components/customer/CustomerHeader'
 import LiveTrackingIndicator from '@/components/customer/LiveTrackingIndicator'
 import OrderHistorySection from '@/components/customer/OrderHistorySection'
 import OrderTimeline from '@/components/customer/OrderTimeline'
+import CancelOrderButton from '@/components/customer/CancelOrderButton'
+import CancellationDetails from '@/components/orders/CancellationDetails'
 import RefreshOrderButton from '@/components/customer/RefreshOrderButton'
 import StatusBadge from '@/components/customer/StatusBadge'
 import RouteLoading from '@/components/routing/RouteLoading'
@@ -82,10 +84,12 @@ const OrderTrackingPage = () => {
                 />
               </div>
               <p className="mt-4 text-2xl font-bold text-gray-900">{formatINR(display.total)}</p>
+              <CancellationDetails order={display} className="mt-4" />
               <p className="mt-2 text-xs text-gray-500">
                 Updates appear automatically. Use refresh if needed.
               </p>
-              <div className="mt-3">
+              <div className="mt-3 space-y-2">
+                <CancelOrderButton order={display} className="w-full" variant="destructive" />
                 <RefreshOrderButton onRefresh={loadOrder} className="w-full" />
               </div>
             </div>

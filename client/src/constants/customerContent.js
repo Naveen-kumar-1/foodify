@@ -47,10 +47,16 @@ export const CUSTOMER_CONTENT = {
   statusLabel: 'Status',
   activeOrder: 'Active order',
   viewDetails: 'View details',
+  cancelOrder: 'Cancel Order',
+  cancelling: 'Cancelling...',
+  cancelConfirm: 'Are you sure you want to cancel this order?',
+  cancelSuccess: 'Your order has been cancelled.',
+  sessionExpired: 'Session expired. Please scan the QR code again.',
 }
 
 export const CUSTOMER_STATUS = {
   placed: 'Placed',
+  confirmed: 'Confirmed',
   preparing: 'Preparing',
   ready: 'Ready',
   served: 'Served',

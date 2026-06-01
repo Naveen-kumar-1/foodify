@@ -137,6 +137,7 @@ export const CustomerSessionProvider = ({ qrToken, children }) => {
     () => ({
       qrToken,
       session,
+      customerSessionId,
       scanData: scanQuery.data,
       scanLoading: scanQuery.isLoading,
       scanError: scanQuery.isError,
@@ -153,6 +154,7 @@ export const CustomerSessionProvider = ({ qrToken, children }) => {
     [
       qrToken,
       session,
+      customerSessionId,
       scanQuery.data,
       scanQuery.isLoading,
       scanQuery.isError,

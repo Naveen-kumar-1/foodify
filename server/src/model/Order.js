@@ -39,10 +39,27 @@ const orderSchema = new mongoose.Schema(
         },
         orderStatus: {
             type: String,
-            enum: ["placed", "preparing", "ready", "served", "completed", "cancelled"],
+            enum: [
+                "placed",
+                "confirmed",
+                "preparing",
+                "ready",
+                "served",
+                "completed",
+                "cancelled",
+            ],
             default: "placed",
             index: true,
         },
+        cancelledBy: {
+            type: String,
+            enum: ["customer", "kitchen", "admin"],
+            default: null,
+        },
+        cancellationReason: { type: String, default: null },
+        customReason: { type: String, default: null },
+        previousOrderStatus: { type: String, default: null },
+        cancelledAt: { type: Date, default: null },
         notes: { type: String, default: "" },
         statusHistory: {
             type: [

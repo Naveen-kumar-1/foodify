@@ -1,11 +1,25 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Loader2, X } from 'lucide-react'
+import CancellationDetails from '@/components/orders/CancellationDetails'
+import CancelOrderModal from '@/components/orders/CancelOrderModal'
+import { Button } from '@/components/ui/button'
 import { CUSTOMER_STATUS } from '@/constants/customerContent'
+import { canStaffCancel } from '@/lib/orderCancel'
 import { formatINR, formatOrderTime } from '@/lib/customerUi'
-import { cn } from '@/lib/utils'
 
-const KitchenOrderDrawer = ({ order, open, onClose, action, isUpdating, onAction }) => {
+const KitchenOrderDrawer = ({
+  order,
+  open,
+  onClose,
+  action,
+  isUpdating,
+  onAction,
+  onCancel,
+  isCancelling,
+}) => {
+  const [cancelOpen, setCancelOpen] = useState(false)
+
   useEffect(() => {
     if (!open) return undefined
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -19,6 +33,8 @@ const KitchenOrderDrawer = ({ order, open, onClose, action, isUpdating, onAction
 
   if (!open || !order) return null
 
+  const showCancel = canStaffCancel(order.orderStatus) && onCancel
+
   return createPortal(
     <>
       <button
@@ -27,9 +43,7 @@ const KitchenOrderDrawer = ({ order, open, onClose, action, isUpdating, onAction
         aria-label="Close"
         onClick={onClose}
       />
-      <aside
-        className="fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform"
-      >
+      <aside className="fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
         <header className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
           <div>
             <p className="text-lg font-bold text-gray-900">{order.orderNumber}</p>
@@ -53,6 +67,8 @@ const KitchenOrderDrawer = ({ order, open, onClose, action, isUpdating, onAction
             </span>
             <span className="text-gray-500">{formatOrderTime(order.createdAt)}</span>
           </div>
+
+          <CancellationDetails order={order} className="mb-4" />
 
           <section className="mb-4">
             <h3 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
@@ -120,20 +136,42 @@ const KitchenOrderDrawer = ({ order, open, onClose, action, isUpdating, onAction
           )}
         </div>
 
-        {action && (
-          <footer className="border-t border-gray-100 p-4">
+        <footer className="space-y-2 border-t border-gray-100 p-4">
+          {action && order.orderStatus !== 'cancelled' && (
             <button
               type="button"
-              disabled={isUpdating}
+              disabled={isUpdating || isCancelling}
               onClick={() => onAction(order.orderId, action.next)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {isUpdating ? <Loader2 className="size-4 animate-spin" /> : null}
               {action.label}
             </button>
-          </footer>
-        )}
+          )}
+          {showCancel && (
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full"
+              disabled={isUpdating || isCancelling}
+              onClick={() => setCancelOpen(true)}
+            >
+              Cancel order
+            </Button>
+          )}
+        </footer>
       </aside>
+
+      <CancelOrderModal
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        actor="kitchen"
+        loading={isCancelling}
+        onConfirm={(payload) => {
+          onCancel(order.orderId, payload)
+          setCancelOpen(false)
+        }}
+      />
     </>,
     document.body,
   )

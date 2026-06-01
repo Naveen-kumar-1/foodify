@@ -5,7 +5,15 @@ export const KITCHEN_COLUMNS = [
     accent: 'border-t-blue-500',
     badge: 'bg-blue-50 text-blue-700 ring-blue-200',
     dot: 'bg-blue-500',
-    action: { next: 'preparing', label: 'Start' },
+    action: { next: 'confirmed', label: 'Confirm' },
+  },
+  {
+    key: 'confirmed',
+    label: 'Confirmed',
+    accent: 'border-t-cyan-500',
+    badge: 'bg-cyan-50 text-cyan-700 ring-cyan-200',
+    dot: 'bg-cyan-500',
+    action: { next: 'preparing', label: 'Start prep' },
   },
   {
     key: 'preparing',
@@ -36,6 +44,7 @@ export const KITCHEN_COLUMNS = [
 export const KITCHEN_FILTERS = [
   { value: 'board', label: 'Live board' },
   { value: 'placed', label: 'New' },
+  { value: 'confirmed', label: 'Confirmed' },
   { value: 'preparing', label: 'Preparing' },
   { value: 'ready', label: 'Ready' },
   { value: 'served', label: 'Served' },

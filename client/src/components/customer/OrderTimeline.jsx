@@ -3,7 +3,7 @@ import { CUSTOMER_STATUS } from '@/constants/customerContent'
 import { getStatusStyle } from '@/lib/customerUi'
 import { cn } from '@/lib/utils'
 
-const STEPS = ['placed', 'preparing', 'ready', 'served', 'completed']
+const STEPS = ['placed', 'confirmed', 'preparing', 'ready', 'served', 'completed']
 
 const OrderTimeline = ({ currentStatus }) => {
   const currentIndex = STEPS.indexOf(currentStatus)

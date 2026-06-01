@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
+import CancellationDetails from '@/components/orders/CancellationDetails'
+import CancelOrderModal from '@/components/orders/CancelOrderModal'
 import PageHeader from '@/components/common/PageHeader'
+import { canStaffCancel } from '@/lib/orderCancel'
 import { ORDERS_CONTENT } from '@/constants/content'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +22,7 @@ const formatINR = (n) =>
 
 const statusVariant = {
   placed: 'warning',
+  confirmed: 'secondary',
   preparing: 'secondary',
   ready: 'default',
   served: 'default',
@@ -29,6 +33,7 @@ const statusVariant = {
 const STATUS_OPTIONS = [
   { value: 'all', label: ORDERS_CONTENT.allStatuses },
   { value: 'placed', label: 'Placed' },
+  { value: 'confirmed', label: 'Confirmed' },
   { value: 'preparing', label: 'Preparing' },
   { value: 'ready', label: 'Ready' },
   { value: 'served', label: 'Served' },
@@ -39,6 +44,8 @@ const STATUS_OPTIONS = [
 const OrdersManagement = () => {
   const queryClient = useQueryClient()
   const [selected, setSelected] = useState(null)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   useRestaurantOrderSocket({
     onOrderEvent: () => {
@@ -85,7 +92,31 @@ const OrdersManagement = () => {
     }
   }
 
+  const handleAdminCancel = async ({ cancellationReason, customReason }) => {
+    if (!selected) return
+    setCancelLoading(true)
+    try {
+      const data = await orderService.staffCancelOrder(selected.orderId, {
+        cancellationReason,
+        customReason,
+        cancelledBy: 'admin',
+      })
+      toast.success('Order cancelled')
+      setSelected(data.order)
+      setCancelOpen(false)
+      refetch()
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
   const updateStatus = async (orderId, newStatus) => {
+    if (newStatus === 'cancelled') {
+      setCancelOpen(true)
+      return
+    }
     try {
       await orderService.updateOrderStatus(orderId, newStatus)
       toast.success(ORDERS_CONTENT.statusUpdated)
@@ -216,6 +247,7 @@ const OrdersManagement = () => {
                 <p className="text-sm text-muted-foreground capitalize">
                   {selected.paymentMethod?.replace('_', ' ')} · {selected.paymentStatus}
                 </p>
+                <CancellationDetails order={selected} className="mt-4" />
                 <ul className="mt-4 space-y-2 text-sm">
                   {selected.items?.map((item) => (
                     <li key={item.foodId} className="flex justify-between">
@@ -242,8 +274,18 @@ const OrdersManagement = () => {
                     <span>{formatINR(selected.total)}</span>
                   </p>
                 </div>
+                {canStaffCancel(selected.orderStatus) && (
+                  <Button
+                    className="mt-4 w-full"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setCancelOpen(true)}
+                  >
+                    Cancel order
+                  </Button>
+                )}
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  {['placed', 'preparing', 'ready', 'served', 'completed', 'cancelled'].map((s) => (
+                  {['placed', 'confirmed', 'preparing', 'ready', 'served', 'completed'].map((s) => (
                     <Button
                       key={s}
                       size="sm"
@@ -268,6 +310,13 @@ const OrdersManagement = () => {
           )}
         </div>
       )}
+      <CancelOrderModal
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        actor="admin"
+        loading={cancelLoading}
+        onConfirm={handleAdminCancel}
+      />
     </div>
   )
 }

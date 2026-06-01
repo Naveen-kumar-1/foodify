@@ -5,7 +5,11 @@ import { AppError } from "../middleware/errorHandler.js";
 import { getCustomerVisibleMenu } from "./menuService.js";
 import { getTableByQrToken } from "./tableService.js";
 import { validateCoupon } from "./couponService.js";
-import { validateStatusUpdate } from "../validations/orderValidation.js";
+import {
+    canCustomerCancelOrder,
+    canStaffCancelOrder,
+    validateStatusUpdate,
+} from "../validations/orderValidation.js";
 import {
     buildOrderLinesFromMenu,
     calculateOrderTotals,
@@ -30,6 +34,11 @@ const sanitizeOrder = (order, table = null) => ({
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     orderStatus: order.orderStatus,
+    cancelledBy: order.cancelledBy || null,
+    cancellationReason: order.cancellationReason || null,
+    customReason: order.customReason || null,
+    previousOrderStatus: order.previousOrderStatus || null,
+    cancelledAt: order.cancelledAt || null,
     notes: order.notes,
     statusHistory: order.statusHistory,
     createdAt: order.createdAt,
@@ -226,7 +235,7 @@ export const getKitchenOrders = async (restaurantId, query) => {
     const filter = { restaurantId };
 
     if (query.status === "active") {
-        filter.orderStatus = { $in: ["placed", "preparing", "ready", "served"] };
+        filter.orderStatus = { $in: ["placed", "confirmed", "preparing", "ready", "served"] };
     } else if (query.status !== "all") {
         filter.orderStatus = query.status;
     }
@@ -290,4 +299,68 @@ export const getOrderById = async (restaurantId, orderId) => {
     const Table = (await import("../model/Table.js")).default;
     const table = await Table.findOne({ tableId: order.tableId });
     return sanitizeOrder(order, table);
+};
+
+export const cancelOrder = async ({
+    orderId,
+    restaurantId = null,
+    customerSessionId = null,
+    cancelledBy,
+    cancellationReason = null,
+    customReason = null,
+}) => {
+    const filter = { orderId };
+    if (customerSessionId) {
+        filter.customerSessionId = customerSessionId;
+    } else if (restaurantId) {
+        filter.restaurantId = restaurantId;
+    } else {
+        throw new AppError("Invalid cancellation request", 400);
+    }
+
+    const order = await Order.findOne(filter);
+    if (!order) throw new AppError("Order not found", 404);
+
+    if (order.orderStatus === "cancelled") {
+        throw new AppError("This order has already been cancelled.", 400);
+    }
+
+    if (order.orderStatus === "completed") {
+        throw new AppError("Completed orders cannot be cancelled.", 400);
+    }
+
+    const reasonText = cancellationReason?.trim() || "";
+    if (!reasonText) {
+        throw new AppError("Cancellation reason is required", 400);
+    }
+
+    if (cancelledBy === "customer") {
+        if (!canCustomerCancelOrder(order.orderStatus)) {
+            throw new AppError(
+                "This order can no longer be cancelled. Cancellation is only allowed before preparation starts.",
+                403,
+            );
+        }
+    } else if (["kitchen", "admin"].includes(cancelledBy)) {
+        if (!canStaffCancelOrder(order.orderStatus)) {
+            throw new AppError("This order cannot be cancelled at its current status.", 400);
+        }
+    } else {
+        throw new AppError("Invalid cancellation actor", 400);
+    }
+
+    order.previousOrderStatus = order.orderStatus;
+    order.orderStatus = "cancelled";
+    order.cancelledBy = cancelledBy;
+    order.cancellationReason = reasonText;
+    order.customReason = customReason?.trim() || null;
+    order.cancelledAt = new Date();
+    order.statusHistory.push({ status: "cancelled", at: new Date() });
+    await order.save();
+
+    const Table = (await import("../model/Table.js")).default;
+    const table = await Table.findOne({ tableId: order.tableId });
+    const sanitized = sanitizeOrder(order, table);
+    emitOrderStatusUpdated(sanitized);
+    return sanitized;
 };

@@ -15,6 +15,7 @@ export const formatOrderTime = (iso) => {
 
 export const STATUS_STYLES = {
   placed: { dot: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700', label: 'Placed' },
+  confirmed: { dot: 'bg-cyan-500', bg: 'bg-cyan-50', text: 'text-cyan-700', label: 'Confirmed' },
   preparing: { dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', label: 'Preparing' },
   ready: { dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Ready' },
   served: { dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700', label: 'Served' },

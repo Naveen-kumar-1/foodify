@@ -9,6 +9,7 @@ import menuRoutes from "./src/routes/menuRoutes.js";
 import tableRoutes from "./src/routes/tableRoutes.js";
 import orderRoutes from "./src/routes/orderRoutes.js";
 import dashboardRoutes from "./src/routes/dashboardRoutes.js";
+import revenueRoutes from "./src/routes/revenueRoutes.js";
 import { connectDB } from "./src/config/db.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
 import { initSocket } from "./src/socket/socketServer.js";
@@ -27,6 +28,7 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/revenue", revenueRoutes);
 app.get("/", (req, res) => {
     res.send("Welcome to Foodify...😀");
 });

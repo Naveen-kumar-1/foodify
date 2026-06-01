@@ -1,14 +1,32 @@
 import { AppError } from "../middleware/errorHandler.js";
 
-const ORDER_STATUSES = ["placed", "preparing", "ready", "served", "completed", "cancelled"];
+export const ORDER_STATUSES = [
+    "placed",
+    "confirmed",
+    "preparing",
+    "ready",
+    "served",
+    "completed",
+    "cancelled",
+];
+
+export const CUSTOMER_CANCELLABLE_STATUSES = ["placed", "confirmed"];
+
+export const STAFF_CANCELLABLE_STATUSES = ["placed", "confirmed", "preparing"];
+
 const KITCHEN_TRANSITIONS = {
-    placed: ["preparing", "cancelled"],
+    placed: ["confirmed", "preparing", "cancelled"],
+    confirmed: ["preparing", "cancelled"],
     preparing: ["ready", "cancelled"],
     ready: ["served", "cancelled"],
     served: ["completed"],
     completed: [],
     cancelled: [],
 };
+
+export const canCustomerCancelOrder = (status) => CUSTOMER_CANCELLABLE_STATUSES.includes(status);
+
+export const canStaffCancelOrder = (status) => STAFF_CANCELLABLE_STATUSES.includes(status);
 
 export const validateOrderItems = (items) => {
     if (!Array.isArray(items) || !items.length) {
@@ -56,6 +74,18 @@ export const validateStatusUpdate = (currentStatus, nextStatus) => {
     if (!allowed.includes(nextStatus)) {
         throw new AppError(`Cannot change status from ${currentStatus} to ${nextStatus}`, 400);
     }
+};
+
+export const validateCancelOrderBody = (body, { requireReason = false } = {}) => {
+    const reason = body.cancellationReason?.trim() || body.reason?.trim() || "";
+    if (requireReason && !reason) {
+        throw new AppError("Cancellation reason is required", 400);
+    }
+    const cancelledBy = body.cancelledBy || "kitchen";
+    if (!["kitchen", "admin"].includes(cancelledBy)) {
+        throw new AppError("Invalid cancelledBy value", 400);
+    }
+    return { reason, cancelledBy };
 };
 
 export const validateKitchenListQuery = (query) => {

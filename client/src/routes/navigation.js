@@ -6,6 +6,7 @@ import {
   QrCode,
   ChefHat,
   User,
+  BarChart3,
 } from 'lucide-react'
 import { ROUTE_PATHS } from '@/routes/constants'
 
@@ -29,6 +30,11 @@ export const DASHBOARD_NAV = [
     path: ROUTE_PATHS.ORDERS,
     title: 'Orders',
     icon: ShoppingBag,
+  },
+  {
+    path: ROUTE_PATHS.REVENUE,
+    title: 'Revenue',
+    icon: BarChart3,
   },
   {
     path: ROUTE_PATHS.KITCHEN,

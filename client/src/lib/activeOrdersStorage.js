@@ -22,7 +22,7 @@ export const buildOrderRecord = (order, tableMeta = {}) => ({
 export const isOrderExpired = (record) => new Date(record.expiresAt).getTime() <= now()
 
 export const isInProgressStatus = (status) =>
-  ['placed', 'preparing', 'ready', 'served'].includes(status)
+  ['placed', 'confirmed', 'preparing', 'ready', 'served'].includes(status)
 
 export const readStoredOrders = (qrToken) => {
   try {

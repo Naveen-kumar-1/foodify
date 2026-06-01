@@ -76,11 +76,11 @@ export const getDashboardAnalytics = async (restaurantId, { range = "today", cus
         Order.countDocuments({ ...periodFilter, orderStatus: "cancelled" }),
         Order.countDocuments({
             restaurantId,
-            orderStatus: { $in: ["placed", "preparing", "ready"] },
+            orderStatus: { $in: ["placed", "confirmed", "preparing", "ready"] },
         }),
         Order.distinct("tableId", {
             restaurantId,
-            orderStatus: { $in: ["placed", "preparing", "ready", "served"] },
+            orderStatus: { $in: ["placed", "confirmed", "preparing", "ready", "served"] },
         }),
         Order.find(periodFilter).sort({ createdAt: -1 }).limit(10).lean(),
         Order.aggregate([

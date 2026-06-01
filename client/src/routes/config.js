@@ -5,6 +5,7 @@ import {
   ShoppingBag,
   QrCode,
   User,
+  BarChart3,
 } from 'lucide-react'
 import { LAYOUT_KEYS, ROUTE_PATHS } from '@/routes/constants'
 
@@ -162,6 +163,11 @@ export const routeConfig = [
         path: 'orders',
         page: () => import('@/pages/dashboard/OrdersManagement'),
         meta: { title: 'Orders', icon: ShoppingBag },
+      },
+      {
+        path: 'revenue',
+        page: () => import('@/pages/RevenueDashboard/RevenueDashboard'),
+        meta: { title: 'Revenue', icon: BarChart3 },
       },
       {
         path: 'qr-codes',

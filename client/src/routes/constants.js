@@ -11,6 +11,7 @@ export const ROUTE_PATHS = {
   ORDERS: '/orders',
   QR_CODES: '/qr-codes',
   PROFILE: '/profile',
+  REVENUE: '/revenue',
   KITCHEN: '/kitchen',
   ORDER: '/order',
   NOT_FOUND: '*',
@@ -40,5 +41,6 @@ export const PROTECTED_PATHS = [
   ROUTE_PATHS.ORDERS,
   ROUTE_PATHS.QR_CODES,
   ROUTE_PATHS.PROFILE,
+  ROUTE_PATHS.REVENUE,
   ROUTE_PATHS.KITCHEN,
 ]

@@ -1,5 +1,7 @@
 import * as orderService from "../services/orderService.js";
 import { validateCoupon } from "../services/couponService.js";
+import { parseCancellationPayload } from "../constants/cancellationReasons.js";
+import { AppError } from "../middleware/errorHandler.js";
 import {
     validateCouponBody,
     validateKitchenListQuery,
@@ -80,4 +82,44 @@ export const kitchenUpdateStatus = async (req, res) => {
         status,
     );
     res.status(200).json({ message: "Status updated", order });
+};
+
+const parseCancelBody = (body, actor) => {
+    try {
+        return parseCancellationPayload(body, actor);
+    } catch (err) {
+        throw new AppError(err.message, 400);
+    }
+};
+
+export const customerCancelOrder = async (req, res) => {
+    const sessionId = req.body.sessionId?.trim() || req.body.customerSessionId?.trim();
+    if (!sessionId) {
+        return res.status(400).json({ message: "sessionId is required" });
+    }
+
+    const { cancellationReason, customReason } = parseCancelBody(req.body, "customer");
+
+    const order = await orderService.cancelOrder({
+        orderId: req.params.orderId,
+        customerSessionId: sessionId,
+        cancelledBy: "customer",
+        cancellationReason,
+        customReason,
+    });
+    res.status(200).json({ message: "Order cancelled successfully", order });
+};
+
+export const staffCancelOrder = async (req, res) => {
+    const actor = req.body.cancelledBy === "admin" ? "admin" : "kitchen";
+    const { cancellationReason, customReason } = parseCancelBody(req.body, actor);
+
+    const order = await orderService.cancelOrder({
+        restaurantId: req.restaurantId,
+        orderId: req.params.orderId,
+        cancelledBy: actor,
+        cancellationReason,
+        customReason,
+    });
+    res.status(200).json({ message: "Order cancelled", order });
 };

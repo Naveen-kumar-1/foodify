@@ -29,4 +29,13 @@ export const orderService = {
 
   kitchenUpdateStatus: (orderId, status) =>
     api.patch(`/api/orders/kitchen/${orderId}/status`, { status }).then((r) => r.data),
+
+  customerCancelOrder: (orderId, payload) =>
+    api.post(`/api/orders/public/${orderId}/cancel`, payload).then((r) => r.data),
+
+  staffCancelOrder: (orderId, payload) =>
+    api.patch(`/api/orders/${orderId}/cancel`, payload).then((r) => r.data),
+
+  kitchenCancelOrder: (orderId, payload) =>
+    api.patch(`/api/orders/kitchen/${orderId}/cancel`, payload).then((r) => r.data),
 }

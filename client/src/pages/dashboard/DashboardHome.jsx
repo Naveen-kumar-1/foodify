@@ -37,6 +37,7 @@ const RANGE_OPTIONS = [
 
 const statusVariant = {
   placed: 'warning',
+  confirmed: 'secondary',
   preparing: 'secondary',
   ready: 'default',
   served: 'default',

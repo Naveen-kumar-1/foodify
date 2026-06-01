@@ -6,6 +6,8 @@ import CustomerHeader from '@/components/customer/CustomerHeader'
 import OrderHistorySection from '@/components/customer/OrderHistorySection'
 import OrderTimeline from '@/components/customer/OrderTimeline'
 import LiveTrackingIndicator from '@/components/customer/LiveTrackingIndicator'
+import CancelOrderButton from '@/components/customer/CancelOrderButton'
+import CancellationDetails from '@/components/orders/CancellationDetails'
 import RefreshOrderButton from '@/components/customer/RefreshOrderButton'
 import StatusBadge from '@/components/customer/StatusBadge'
 import RouteLoading from '@/components/routing/RouteLoading'
@@ -102,6 +104,8 @@ const OrderSuccessPage = () => {
               </div>
             </div>
             <OrderTimeline currentStatus={display.orderStatus} />
+            <CancellationDetails order={display} className="mt-4" />
+            <CancelOrderButton order={display} className="mt-4 w-full" variant="destructive" />
             <Link
               to={`/order/${qrToken}/track/${orderId}`}
               className="mt-4 block text-center text-sm font-semibold text-gray-700 underline-offset-2 hover:underline"

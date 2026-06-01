@@ -4,6 +4,7 @@ import { Loader2, RefreshCw, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 import KitchenOrderCard from '@/components/kitchen/KitchenOrderCard'
 import KitchenOrderDrawer from '@/components/kitchen/KitchenOrderDrawer'
+import CancelOrderModal from '@/components/orders/CancelOrderModal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { KITCHEN_COLUMNS, KITCHEN_FILTERS } from '@/constants/kitchenContent'
@@ -23,8 +24,12 @@ const KitchenDashboard = () => {
   const [searchInput, setSearchInput] = useState('')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [updatingId, setUpdatingId] = useState(null)
+  const [cancellingOrderId, setCancellingOrderId] = useState(null)
+  const [cardCancelOrder, setCardCancelOrder] = useState(null)
+  const [cardCancelOpen, setCardCancelOpen] = useState(false)
   const [columnPages, setColumnPages] = useState({
     placed: 1,
+    confirmed: 1,
     preparing: 1,
     ready: 1,
     served: 1,
@@ -36,6 +41,9 @@ const KitchenDashboard = () => {
     onOrderEvent: (payload) => {
       if (payload?.orderStatus === 'placed') {
         toast.success(`New order ${payload.orderNumber}`, { duration: 4000 })
+      }
+      if (payload?.orderStatus === 'cancelled') {
+        toast(`Order ${payload.orderNumber} cancelled`, { icon: '⚠️' })
       }
       queryClient.invalidateQueries({ queryKey: ['kitchenCol'] })
       queryClient.invalidateQueries({ queryKey: ['kitchenList'] })
@@ -78,6 +86,44 @@ const KitchenDashboard = () => {
     refetchOnWindowFocus: false,
   })
 
+  const cancelMutation = useMutation({
+    mutationFn: ({ orderId, cancellationReason, customReason }) =>
+      orderService.kitchenCancelOrder(orderId, {
+        cancellationReason,
+        customReason,
+        cancelledBy: 'kitchen',
+      }),
+    onMutate: ({ orderId }) => setCancellingOrderId(orderId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['kitchenCol'] })
+      queryClient.invalidateQueries({ queryKey: ['kitchenList'] })
+      toast.success('Order cancelled successfully')
+      setCardCancelOpen(false)
+      setCardCancelOrder(null)
+      if (data?.order?.orderStatus === 'cancelled') {
+        setSelectedOrder(null)
+      } else if (data?.order) {
+        setSelectedOrder(data.order)
+      }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+    onSettled: () => setCancellingOrderId(null),
+  })
+
+  const handleCardCancelClick = (order) => {
+    setCardCancelOrder(order)
+    setCardCancelOpen(true)
+  }
+
+  const handleCardCancelConfirm = (payload) => {
+    if (!cardCancelOrder) return
+    cancelMutation.mutate({ orderId: cardCancelOrder.orderId, ...payload })
+  }
+
+  const handleDrawerCancel = (orderId, payload) => {
+    cancelMutation.mutate({ orderId, ...payload })
+  }
+
   const statusMutation = useMutation({
     mutationFn: ({ orderId, nextStatus }) =>
       orderService.kitchenUpdateStatus(orderId, nextStatus),
@@ -106,7 +152,7 @@ const KitchenDashboard = () => {
     e.preventDefault()
     setSearch(searchInput.trim())
     setListPage(1)
-    setColumnPages({ placed: 1, preparing: 1, ready: 1, served: 1 })
+    setColumnPages({ placed: 1, confirmed: 1, preparing: 1, ready: 1, served: 1 })
   }
 
   const refreshAll = () => {
@@ -119,7 +165,15 @@ const KitchenDashboard = () => {
     : listQuery.isFetching
 
   const stats = useMemo(() => {
-    const counts = { placed: 0, preparing: 0, ready: 0, served: 0, completed: 0, cancelled: 0 }
+    const counts = {
+      placed: 0,
+      confirmed: 0,
+      preparing: 0,
+      ready: 0,
+      served: 0,
+      completed: 0,
+      cancelled: 0,
+    }
     columnQueries.forEach((q, i) => {
       const key = visibleColumns[i]?.key
       if (key && q.data?.pagination) counts[key] = q.data.pagination.total
@@ -138,6 +192,7 @@ const KitchenDashboard = () => {
         <div className="flex flex-wrap items-center gap-2">
           {[
             { key: 'placed', label: 'New', count: stats.placed, color: 'text-blue-600' },
+            { key: 'confirmed', label: 'Confirmed', count: stats.confirmed, color: 'text-cyan-600' },
             { key: 'preparing', label: 'Prep', count: stats.preparing, color: 'text-orange-600' },
             { key: 'ready', label: 'Ready', count: stats.ready, color: 'text-emerald-600' },
             { key: 'served', label: 'Served', count: stats.served, color: 'text-violet-600' },
@@ -190,7 +245,7 @@ const KitchenDashboard = () => {
               onClick={() => {
                 setFilter(f.value)
                 setListPage(1)
-                setColumnPages({ placed: 1, preparing: 1, ready: 1, served: 1 })
+                setColumnPages({ placed: 1, confirmed: 1, preparing: 1, ready: 1, served: 1 })
               }}
               className={cn(
                 'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition',
@@ -254,8 +309,10 @@ const KitchenDashboard = () => {
                         order={order}
                         action={col.action}
                         isUpdating={updatingId === order.orderId}
+                        isCancelling={cancellingOrderId === order.orderId}
                         onOpen={setSelectedOrder}
                         onAction={handleAction}
+                        onCancel={handleCardCancelClick}
                       />
                     ))
                   )}
@@ -358,6 +415,19 @@ const KitchenDashboard = () => {
         action={drawerAction}
         isUpdating={updatingId === selectedOrder?.orderId}
         onAction={handleAction}
+        onCancel={handleDrawerCancel}
+        isCancelling={cancellingOrderId === selectedOrder?.orderId}
+      />
+
+      <CancelOrderModal
+        open={cardCancelOpen}
+        onOpenChange={(open) => {
+          setCardCancelOpen(open)
+          if (!open) setCardCancelOrder(null)
+        }}
+        actor="kitchen"
+        loading={cancelMutation.isPending}
+        onConfirm={handleCardCancelConfirm}
       />
     </div>
   )
