@@ -1,8 +1,7 @@
-import { createRequire } from "module";
-import PDFDocument from "pdfkit";
 
-const require = createRequire(import.meta.url);
-const archiver = require("archiver");
+import PDFDocument from "pdfkit";
+import archiver from "archiver";
+
 import Restaurant from "../model/Restaurant.js";
 import { getTablesWithQrImages, getQrImageUrl } from "./tableService.js";
 
