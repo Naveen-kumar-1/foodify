@@ -1,9 +1,18 @@
-
 import PDFDocument from "pdfkit";
-import archiver from "archiver";
 
 import Restaurant from "../model/Restaurant.js";
 import { getTablesWithQrImages, getQrImageUrl } from "./tableService.js";
+
+/** Lazy-load archiver (ESM-only v8) — required for Vercel/CJS serverless bundles */
+let archiverFactory = null;
+
+const getArchiver = async () => {
+    if (!archiverFactory) {
+        const mod = await import("archiver");
+        archiverFactory = mod.default ?? mod;
+    }
+    return archiverFactory;
+};
 
 const fetchQrBuffer = async (qrToken) => {
     const url = getQrImageUrl(qrToken);
@@ -28,6 +37,7 @@ export const streamTablesZip = async (restaurantId, res) => {
         `attachment; filename="foodify-qr-codes-${restaurant?.name || restaurantId}.zip"`,
     );
 
+    const archiver = await getArchiver();
     const archive = archiver("zip", { zlib: { level: 9 } });
     archive.on("error", (err) => {
         throw err;
