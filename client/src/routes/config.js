@@ -21,6 +21,7 @@ import { LAYOUT_KEYS, ROUTE_PATHS } from '@/routes/constants'
  * @property {keyof typeof LAYOUT_KEYS} [layout]
  * @property {boolean} [protected]
  * @property {boolean} [guestOnly]
+ * @property {boolean} [desktopOnly]
  * @property {RouteMeta} [meta]
  * @property {RouteConfig[]} [children]
  */
@@ -132,6 +133,7 @@ export const routeConfig = [
     path: 'kitchen',
     layout: LAYOUT_KEYS.KITCHEN,
     protected: true,
+    desktopOnly: true,
     children: [
       {
         index: true,
@@ -143,6 +145,7 @@ export const routeConfig = [
   {
     layout: LAYOUT_KEYS.DASHBOARD,
     protected: true,
+    desktopOnly: true,
     children: [
       {
         path: 'dashboard',

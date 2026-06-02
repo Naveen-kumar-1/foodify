@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Outlet, Route } from 'react-router-dom'
 import PageWrapper from '@/components/routing/PageWrapper'
 import RouteLoading from '@/components/routing/RouteLoading'
-import { ProtectedRoute, PublicRoute } from '@/guards'
+import { ProtectedRoute, PublicRoute, DesktopTabletGate } from '@/guards'
 import { layouts } from '@/layouts'
 
 const lazyComponentCache = new Map()
@@ -26,9 +26,11 @@ const LazyPage = ({ importFn, title }) => {
 }
 
 const wrapWithGuards = (route, element) => {
-  if (route.protected) return <ProtectedRoute>{element}</ProtectedRoute>
-  if (route.guestOnly) return <PublicRoute>{element}</PublicRoute>
-  return element
+  let wrapped = element
+  if (route.protected) wrapped = <ProtectedRoute>{wrapped}</ProtectedRoute>
+  if (route.guestOnly) wrapped = <PublicRoute>{wrapped}</PublicRoute>
+  if (route.desktopOnly) wrapped = <DesktopTabletGate>{wrapped}</DesktopTabletGate>
+  return wrapped
 }
 
 const createBranchElement = (route) => {

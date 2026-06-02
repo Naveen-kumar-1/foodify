@@ -44,3 +44,6 @@ export const PROTECTED_PATHS = [
   ROUTE_PATHS.REVENUE,
   ROUTE_PATHS.KITCHEN,
 ]
+
+/** Routes restricted to viewports wider than mobile (see lib/deviceBreakpoints.js) */
+export const DESKTOP_ONLY_PATHS = [...PROTECTED_PATHS]
