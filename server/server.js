@@ -13,6 +13,7 @@ import revenueRoutes from "./src/routes/revenueRoutes.js";
 import { connectDB } from "./src/config/db.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
 import { initSocket } from "./src/socket/socketServer.js";
+import { getAppBaseUrl } from "./src/config/appUrl.js";
 
 const app = express();
 
@@ -41,4 +42,5 @@ initSocket(httpServer);
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}...🚀`);
+    console.log(`Customer app URL (QR codes, emails): ${getAppBaseUrl()}`);
 });

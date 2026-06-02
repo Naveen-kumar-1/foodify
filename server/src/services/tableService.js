@@ -2,11 +2,9 @@ import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import Table from "../model/Table.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { buildOrderPageUrl } from "../config/appUrl.js";
 
-const clientBaseUrl = () =>
-    process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
-
-const buildQrUrl = (qrToken) => `${clientBaseUrl()}/order/${qrToken}`;
+const buildQrUrl = (qrToken) => buildOrderPageUrl(qrToken);
 
 const sanitizeTable = (table) => ({
     tableId: table.tableId,

@@ -2,11 +2,11 @@ import { Server } from "socket.io";
 import Order from "../model/Order.js";
 import { orderRoom, restaurantRoom } from "./orderEvents.js";
 import { verifyRestaurantToken } from "./kitchenEvents.js";
+import { getAppBaseUrl } from "../config/appUrl.js";
 
 let io = null;
 
-const clientOrigin = () =>
-    process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
+const clientOrigin = () => getAppBaseUrl();
 
 export const initSocket = (httpServer) => {
     io = new Server(httpServer, {

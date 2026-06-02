@@ -5,6 +5,7 @@ import { AppError } from "../middleware/errorHandler.js";
 import { formatRestaurantProfile, generateAuthTokens, generateVerificationToken } from "../helpers/auth.js";
 import { isEmailValid, isPasswordValid, PASSWORD_VALIDATION_MESSAGE } from "../helpers/common.js";
 import { sendPasswordResetLinkEmail, sendPasswordResetOTPEmail } from "./emailService.js";
+import { getAppBaseUrl } from "../config/appUrl.js";
 import { createPasswordResetToken, validatePasswordResetToken, consumePasswordResetToken } from "./passwordResetService.js";
 import {
     OTP_TTL,
@@ -41,12 +42,12 @@ export const forgotPassword = async (email) => {
         throw new AppError("This account is inactive. Please contact support.", 403);
     }
 
-    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
+    const clientUrl = getAppBaseUrl();
     const { token } = await createPasswordResetToken({
         restaurantId: restaurant.restaurantId,
         email: normalizedEmail,
     });
-    const resetUrl = `${clientUrl.replace(/\/$/, '')}/reset-password/${token}`;
+    const resetUrl = `${clientUrl}/reset-password/${token}`;
 
     let emailDelivery = { success: false, messageId: null };
 
