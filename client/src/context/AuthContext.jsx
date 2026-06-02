@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { jwtDecode } from 'jwt-decode'
 import { STORAGE_KEYS, storage } from '@/lib/storage'
+import { authService } from '@/services/authService'
 import { restaurantService } from '@/services/restaurantService'
 
 const AuthContext = createContext(null)
@@ -61,15 +62,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const bootstrap = async () => {
       const token = storage.getString(STORAGE_KEYS.ACCESS_TOKEN)
+      const refreshToken = storage.getString(STORAGE_KEYS.REFRESH_TOKEN)
+
+      // If access token is missing/expired but we have a refresh token, try to refresh silently.
       if (!token || !isTokenValid(token)) {
-        clearSession()
-        setIsBootstrapping(false)
-        return
+        if (refreshToken) {
+          try {
+            const data = await authService.refreshToken({ refreshToken })
+            persistSession({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              restaurant: data.restaurant,
+            })
+          } catch {
+            clearSession()
+            setIsBootstrapping(false)
+            return
+          }
+        } else {
+          clearSession()
+          setIsBootstrapping(false)
+          return
+        }
       }
       try {
         const profile = await restaurantService.getProfile()
         setRestaurant(profile)
-        setAccessToken(token)
+        setAccessToken(storage.getString(STORAGE_KEYS.ACCESS_TOKEN))
       } catch {
         clearSession()
       } finally {
@@ -77,7 +96,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
     bootstrap()
-  }, [clearSession])
+  }, [clearSession, persistSession])
 
   useEffect(() => {
     const onUnauthorized = () => clearSession()

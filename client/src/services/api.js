@@ -2,6 +2,11 @@ import axios from 'axios'
 import { API_BASE_URL } from '@/config/env'
 import { STORAGE_KEYS, storage } from '@/lib/storage'
 
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+})
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -17,7 +22,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     let message =
       error.response?.data?.message ||
       error.message ||
@@ -27,7 +32,25 @@ api.interceptors.response.use(
       message = 'Cannot reach the server. Make sure the API is running (port 3000) and restart the dev server.'
     }
 
-    if (error.response?.status === 401) {
+    // Try silent refresh once on 401, then retry original request.
+    if (error.response?.status === 401 && error.config && !error.config.__isRetryRequest) {
+      const refreshToken = storage.getString(STORAGE_KEYS.REFRESH_TOKEN)
+      if (refreshToken) {
+        try {
+          error.config.__isRetryRequest = true
+          const { data } = await refreshClient.post('/auth/refresh-token', { refreshToken })
+          if (data?.accessToken) storage.setString(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken)
+          if (data?.refreshToken) storage.setString(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
+          if (data?.restaurant) storage.set(STORAGE_KEYS.RESTAURANT, data.restaurant)
+          // retry with updated token
+          error.config.headers = error.config.headers || {}
+          error.config.headers.Authorization = `Bearer ${storage.getString(STORAGE_KEYS.ACCESS_TOKEN)}`
+          return api.request(error.config)
+        } catch {
+          // fall through to logout below
+        }
+      }
+
       const hadToken = storage.getString(STORAGE_KEYS.ACCESS_TOKEN)
       if (hadToken) {
         storage.remove(STORAGE_KEYS.ACCESS_TOKEN)

@@ -4,6 +4,7 @@ import {
     forgotPassword,
     getOtpStatus,
     login,
+    refreshToken,
     resendOtp,
     resendResetOtp,
     resetPassword,
@@ -24,6 +25,7 @@ router.get("/otp-status", asyncHandler(getOtpStatus));
 router.post("/verify-email", asyncHandler(verifyEmail));
 router.post("/set-password", asyncHandler(setPassword));
 router.post("/login", asyncHandler(login));
+router.post("/refresh-token", asyncHandler(refreshToken));
 router.post("/forgot-password", asyncHandler(forgotPassword));
 router.get("/verify-reset-token", asyncHandler(verifyResetToken));
 router.post("/resend-reset-otp", asyncHandler(resendResetOtp));

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -25,13 +25,13 @@ const CancelOrderModal = ({
   const reasons = actor === 'customer' ? CUSTOMER_CANCELLATION_REASONS : STAFF_CANCELLATION_REASONS
   const [selectedReason, setSelectedReason] = useState('')
   const [customReason, setCustomReason] = useState('')
-
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (next) => {
+    if (!next) {
       setSelectedReason('')
       setCustomReason('')
     }
-  }, [open])
+    onOpenChange(next)
+  }
 
   const isOther = selectedReason === OTHER_REASON
   const customValid = !isOther || customReason.trim().length >= 5
@@ -46,7 +46,7 @@ const CancelOrderModal = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Cancel Order</DialogTitle>
@@ -97,7 +97,7 @@ const CancelOrderModal = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={loading}
           >
             Keep order

@@ -35,6 +35,10 @@ const getCurrentMinutes = () => {
 const isWithinTimeSlot = (slot, currentMinutes) => {
     const from = parseTimeToMinutes(slot.fromTime);
     const to = parseTimeToMinutes(slot.toTime);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) {
+        // If slot times are invalid, treat it as not active (safer than showing wrong items)
+        return false;
+    }
     return currentMinutes >= from && currentMinutes <= to;
 };
 
@@ -252,7 +256,21 @@ export const getCustomerVisibleMenu = async (restaurantId) => {
             return false;
         }
 
-        return isWithinTimeSlot(slot, currentMinutes);
+        const ok = isWithinTimeSlot(slot, currentMinutes);
+        if (process.env.DEBUG_MENU_SLOTS === "true" && food.foodName?.toLowerCase() === "tea") {
+            // targeted debug to avoid noisy logs
+            console.log("[MenuSlotDebug]", {
+                food: food.foodName,
+                currentMinutes,
+                fromTime: slot.fromTime,
+                toTime: slot.toTime,
+                fromMinutes: parseTimeToMinutes(slot.fromTime),
+                toMinutes: parseTimeToMinutes(slot.toTime),
+                visible: ok,
+                tz: getAppTimeZone(),
+            });
+        }
+        return ok;
     });
 
     return visible.map((food) => sanitizeMenuItem(food, slotMap));

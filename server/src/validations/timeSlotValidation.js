@@ -3,7 +3,27 @@ import { AppError } from "../middleware/errorHandler.js";
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export const parseTimeToMinutes = (time) => {
-    const [hours, minutes] = time.split(":").map(Number);
+    if (typeof time !== "string") return NaN;
+    const trimmed = time.trim();
+
+    // Strict 24-hour HH:mm
+    if (TIME_PATTERN.test(trimmed)) {
+        const [hours, minutes] = trimmed.split(":").map(Number);
+        return hours * 60 + minutes;
+    }
+
+    // Loose support for legacy "h:mm AM/PM" (e.g. "7:00 AM", "07:30PM")
+    const m = trimmed.match(/^(\d{1,2}):([0-5]\d)\s*([AaPp][Mm])$/);
+    if (!m) return NaN;
+
+    let hours = Number(m[1]);
+    const minutes = Number(m[2]);
+    const ampm = m[3].toUpperCase();
+
+    if (hours < 1 || hours > 12) return NaN;
+    if (ampm === "AM") hours = hours === 12 ? 0 : hours;
+    if (ampm === "PM") hours = hours === 12 ? 12 : hours + 12;
+
     return hours * 60 + minutes;
 };
 

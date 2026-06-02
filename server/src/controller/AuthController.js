@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
+import jwt from "jsonwebtoken";
 import Restaurant from "../model/Restaurant.js";
 import { AppError } from "../middleware/errorHandler.js";
 import {
@@ -277,6 +278,41 @@ export const login = async (req, res) => {
         refreshToken,
         restaurant: formatRestaurantProfile(restaurant),
     });
+};
+
+export const refreshToken = async (req, res) => {
+    const token = req.body?.refreshToken;
+    if (!token || typeof token !== "string") {
+        throw new AppError("refreshToken is required", 400);
+    }
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+        );
+
+        if (decoded.type !== "refresh") {
+            throw new AppError("Invalid refresh token", 401);
+        }
+
+        const restaurant = await Restaurant.findOne({ restaurantId: decoded.restaurantId });
+        if (!restaurant) throw new AppError("Invalid refresh token", 401);
+
+        const { accessToken, refreshToken: newRefreshToken } = generateAuthTokens(
+            restaurant.restaurantId,
+        );
+
+        res.status(200).json({
+            message: "Session refreshed",
+            accessToken,
+            refreshToken: newRefreshToken,
+            restaurant: formatRestaurantProfile(restaurant),
+        });
+    } catch (err) {
+        if (err instanceof AppError) throw err;
+        throw new AppError("Invalid or expired refresh token", 401);
+    }
 };
 
 export const forgotPassword = async (req, res) => {

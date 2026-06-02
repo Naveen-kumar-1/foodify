@@ -15,10 +15,12 @@ const getLazyComponent = (importFn) => {
 }
 
 const LazyPage = ({ importFn, title }) => {
+  // eslint-disable-next-line react-hooks/static-components -- lazy() is cached per importFn
   const Component = getLazyComponent(importFn)
   return (
     <PageWrapper title={title}>
       <Suspense fallback={<RouteLoading />}>
+        {/* eslint-disable-next-line react-hooks/static-components -- Component is stable via cache */}
         <Component />
       </Suspense>
     </PageWrapper>

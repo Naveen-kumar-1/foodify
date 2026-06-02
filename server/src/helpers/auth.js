@@ -2,7 +2,9 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
 const ACCESS_TOKEN_EXPIRY = "15m";
-const REFRESH_TOKEN_EXPIRY = "7d";
+// Keep sessions persistent across revisits. Access tokens stay short-lived (15m),
+// refresh tokens are long-lived and rotated via /auth/refresh-token.
+const REFRESH_TOKEN_EXPIRY = "365d";
 
 export const generateVerificationToken = () => uuidv4();
 
