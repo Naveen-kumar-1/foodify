@@ -4,9 +4,32 @@ import TimeSlot from "../model/TimeSlot.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { parseTimeToMinutes } from "../validations/timeSlotValidation.js";
 
+const getAppTimeZone = () => process.env.APP_TIMEZONE || process.env.TZ || "Asia/Kolkata";
+
+const getTimePartsInZone = (date, timeZone) => {
+    // hour/minute in the target zone (serverless is often UTC, which breaks slot logic)
+    const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    }).formatToParts(date);
+
+    const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+    const minute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+    return { hour, minute };
+};
+
 const getCurrentMinutes = () => {
     const now = new Date();
-    return now.getHours() * 60 + now.getMinutes();
+    const tz = getAppTimeZone();
+    try {
+        const { hour, minute } = getTimePartsInZone(now, tz);
+        return hour * 60 + minute;
+    } catch {
+        // Fallback to server timezone if Intl/timeZone is misconfigured
+        return now.getHours() * 60 + now.getMinutes();
+    }
 };
 
 const isWithinTimeSlot = (slot, currentMinutes) => {
