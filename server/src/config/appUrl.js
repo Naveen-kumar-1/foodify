@@ -4,15 +4,19 @@ const trimTrailingSlash = (url) => String(url).replace(/\/+$/, "");
  * Public frontend URL used in QR codes, password-reset emails, and CORS.
  * Set CLIENT_URL in server .env for each environment.
  *
- * Priority: CLIENT_URL → FRONTEND_URL → VITE_APP_URL → APP_URL → localhost (dev only)
+ * Priority:
+ * CLIENT_URL → FRONTEND_URL → DOMAIN → SITE_URL → PUBLIC_URL → VITE_APP_URL → APP_URL → localhost (dev only)
  */
 export const getAppBaseUrl = () => {
     const raw =
         process.env.CLIENT_URL ||
         process.env.FRONTEND_URL ||
+        process.env.DOMAIN ||
+        process.env.SITE_URL ||
+        process.env.PUBLIC_URL ||
         process.env.VITE_APP_URL ||
         process.env.APP_URL;
-
+    
     if (raw?.trim()) {
         return trimTrailingSlash(raw.trim());
     }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Download,
@@ -54,6 +54,15 @@ const QrCodeManagement = () => {
   const [sortBy, setSortBy] = useState('number')
   const [selected, setSelected] = useState(() => new Set())
   const [exporting, setExporting] = useState(null)
+
+  const confirmActionRef = useRef(null)
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    destructive: false,
+  })
 
   const [quickName, setQuickName] = useState('')
   const [quickNumber, setQuickNumber] = useState('')
@@ -206,12 +215,32 @@ const QrCodeManagement = () => {
 
   const selectedTables = tables.filter((t) => selected.has(t.tableId))
 
+  const openConfirm = ({ title, description, confirmText, destructive, onConfirm }) => {
+    confirmActionRef.current = onConfirm
+    setConfirmDialog({
+      open: true,
+      title: title || 'Confirm action',
+      description: description || '',
+      confirmText: confirmText || 'Confirm',
+      destructive: Boolean(destructive),
+    })
+  }
+
   const runBulkAction = (action) => {
     if (!selected.size) return
-    const label =
-      action === 'delete' ? 'delete' : action === 'disable' ? 'disable' : 'enable'
-    if (!window.confirm(`${label} ${selected.size} table(s)?`)) return
-    bulkActionMutation.mutate({ tableIds: [...selected], action })
+    const label = action === 'delete' ? 'Delete' : action === 'disable' ? 'Disable' : 'Enable'
+    openConfirm({
+      title: `${label} ${selected.size} table(s)?`,
+      description:
+        action === 'delete'
+          ? 'This will permanently remove the selected tables and their QR codes.'
+          : action === 'disable'
+            ? 'Disabled tables will have inactive QR codes.'
+            : 'This will re-enable QR codes for the selected tables.',
+      confirmText: label,
+      destructive: action === 'delete',
+      onConfirm: () => bulkActionMutation.mutate({ tableIds: [...selected], action }),
+    })
   }
 
   const downloadPng = (table) => {
@@ -467,9 +496,13 @@ const QrCodeManagement = () => {
                     variant="ghost"
                     className="col-span-2 h-8 text-xs text-destructive"
                     onClick={() => {
-                      if (window.confirm('Delete this table?')) {
-                        deleteMutation.mutate(table.tableId)
-                      }
+                      openConfirm({
+                        title: 'Delete this table?',
+                        description: `Table ${table.tableNumber}${table.tableName ? ` · ${table.tableName}` : ''}`,
+                        confirmText: 'Delete',
+                        destructive: true,
+                        onConfirm: () => deleteMutation.mutate(table.tableId),
+                      })
                     }}
                   >
                     <Trash2 className="size-3" />
@@ -545,6 +578,42 @@ const QrCodeManagement = () => {
             </Button>
             <Button size="sm" onClick={() => viewTable && printTable(viewTable)}>
               {QR_CONTENT.print}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+      >
+        <DialogContent
+          onClose={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+          className="max-w-sm"
+        >
+          <DialogHeader>
+            <DialogTitle>{confirmDialog.title}</DialogTitle>
+          </DialogHeader>
+          {confirmDialog.description ? (
+            <p className="text-sm text-muted-foreground">{confirmDialog.description}</p>
+          ) : null}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={confirmDialog.destructive ? 'destructive' : 'default'}
+              onClick={() => {
+                const fn = confirmActionRef.current
+                setConfirmDialog((prev) => ({ ...prev, open: false }))
+                confirmActionRef.current = null
+                fn?.()
+              }}
+            >
+              {confirmDialog.confirmText}
             </Button>
           </DialogFooter>
         </DialogContent>

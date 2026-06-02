@@ -9,9 +9,16 @@ let io = null;
 const clientOrigin = () => getAppBaseUrl();
 
 export const initSocket = (httpServer) => {
+    const origins = [
+        clientOrigin(),
+        ...(process.env.NODE_ENV === "production"
+            ? []
+            : ["http://localhost:5173", "http://localhost:5174"]),
+    ].filter(Boolean);
+
     io = new Server(httpServer, {
         cors: {
-            origin: [clientOrigin(), "http://localhost:5173", "http://localhost:5174"],
+            origin: Array.from(new Set(origins)),
             methods: ["GET", "POST"],
             credentials: true,
         },
